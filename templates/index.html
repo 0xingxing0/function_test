@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <title>图像检测界面</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            width: 700px;
+            height: 500px; /* 原来是 500px，高度调大一点 */
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 60px auto;
+            gap: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 8px;
+        }
+        .btn-select, .btn-start {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .image-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fafafa;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 第一行第一列：选择图片 -->
+        <div class="btn-select">
+            <input type="file" id="fileInput" accept="image/*" required />
+        </div>
+
+        <!-- 第一行第二列：开始检测 -->
+        <div class="btn-start">
+            <button id="detectBtn">开始检测</button>
+        </div>
+
+        <!-- 第二行第一列：本地预览的原始图片 -->
+        <div class="image-box" id="originalBox">
+            <img id="previewOriginal" src="#" style="display: none;"  alt="原始图片预览" />
+            <span id="noOriginalText">原始图片显示区域</span>
+        </div>
+
+        <!-- 第二行第二列：检测结果图片显示 -->
+        <div class="image-box" id="resultBox">
+            <img id="previewResult" src="#" style="display: none;" alt="检测结果" />
+            <span id="noResultText">检测结果显示区域</span>
+        </div>
+
+    </div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const detectBtn = document.getElementById('detectBtn');
+    const previewOriginal = document.getElementById('previewOriginal');
+    const previewResult = document.getElementById('previewResult');
+    const noOriginalText = document.getElementById('noOriginalText');
+    const noResultText = document.getElementById('noResultText');
+
+    let file = null;
+
+    fileInput.addEventListener('change', (event) => {
+        file = event.target.files[0];
+        if (!file) return;
+
+        // 使用FileReader读取本地文件，实现本地预览
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewOriginal.src = e.target.result;
+            if (noOriginalText) {
+                noOriginalText.style.display = 'none';
+            }
+            previewOriginal.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    });
+
+    detectBtn.addEventListener('click', () => {
+        if (!file) {
+            alert('请先选择一张图片');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+
+        .then(res => res.json())
+        .then(data => {
+            previewOriginal.src = data.original;
+            previewResult.src = data.result;
+            previewOriginal.style.display = 'block';
+            previewResult.style.display = 'block';
+            if (noOriginalText) noOriginalText.style.display = 'none';
+            if (noResultText) noResultText.style.display = 'none';
+        })
+        .catch(err => {
+            console.error('检测失败:', err);
+            alert('检测失败');
+        });
+    });
+</script>
+</body>
+</html>
